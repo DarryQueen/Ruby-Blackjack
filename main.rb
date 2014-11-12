@@ -146,13 +146,6 @@ def hands_actions(player, deck)
   while hands.select{ |hand| !hand.finished? }.any?
     hands.select{ |hand| !hand.finished? }.each_with_index do |hand, i|
       hand_actions(player, hand, deck, i)
-
-      if !hand.alive?
-        puts "\nBusted!"
-      end
-      puts "\nFinal hand: #{hand.to_s}"
-
-      pause
     end
   end
 end
@@ -161,7 +154,7 @@ end
 def hand_actions(player, hand, deck, i)
   # Blackjack!
   if hand.blackjack?
-    puts 'Blackjack!'
+    puts "#{player.name} got blackjack!"
 
     pause
     return
@@ -176,6 +169,13 @@ def hand_actions(player, hand, deck, i)
     proceed = apply_action(action, hand, player.hands, deck)
     continue = (hand.alive? and proceed)
   end
+
+  if !hand.alive?
+    puts "\nBusted!"
+  end
+  puts "\nFinal hand: #{hand.to_s}"
+
+  pause
 end
 
 # Perform the given action:
