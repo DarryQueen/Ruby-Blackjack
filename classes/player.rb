@@ -58,10 +58,17 @@ class Player
       if dealer_blackjack
         delta -= hand.blackjack? ? 0 : hand.bet
       elsif hand.blackjack?
-        # Double reward for blackjack:
-        delta += 2 * hand.bet
-      elsif hand.alive? and (dealer_bust or hand.total > dealer_hand.total)
-        delta += hand.bet
+        # Extra reward for blackjack:
+        delta += (1.5 * hand.bet).to_i
+      elsif hand.alive?
+        # Dealer is busted or hand is better:
+        if (dealer_bust or hand.total > dealer_hand.total)
+          delta += hand.bet
+        # Hand is worse:
+        elsif hand.total < dealer_hand.total
+          delta -= hand.bet
+        end
+      # Player busted:
       else
         delta -= hand.bet
       end
