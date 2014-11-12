@@ -57,6 +57,9 @@ class Player
     @game_stats['hands'].each do |hand|
       if dealer_blackjack
         delta -= hand.blackjack? ? 0 : hand.bet
+      elsif hand.blackjack?
+        # Double reward for blackjack:
+        delta += 2 * hand.bet
       elsif hand.alive? and (dealer_bust or hand.total > dealer_hand.total)
         delta += hand.bet
       else
