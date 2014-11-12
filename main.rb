@@ -239,7 +239,11 @@ def get_bet(player)
     bet = gets.chomp
     # Quitting action:
     if bet == '0'
-      puts 'Bye!'
+      if player.funds > STARTING_FUNDS
+        puts 'You made it big! Hope you had fun, and come back any time you like.'
+      else
+        puts 'Looks like you didn\'t cash out very much. Better luck at solitaire!'
+      end
       player.fold
       return
     end
