@@ -47,9 +47,6 @@ def main
       dealer.new_game
       dealer.deal(deck.draw, deck.draw)
 
-      # Whether or not the dealer should play, if a player has gotten blackjack.
-      dealer_play = true
-
       # If the dealer got blackjack, it's game over.
       if dealer.hand.blackjack?
         clear_screen
@@ -57,13 +54,11 @@ def main
         pause
       else
         # All players get a turn to play:
-        dealer_play = take_actions(players, dealer, deck)
+        take_actions(players, dealer, deck)
       end
 
       # Dealer's turn:
-      if dealer_play
-        dealer_turn(dealer, deck)
-      end
+      dealer_turn(dealer, deck)
 
       # Calculate transactions:
       player_gains = calc_transactions(players, dealer)
@@ -109,14 +104,12 @@ end
 
 # In one round, allow all players to take actions:
 def take_actions(players, dealer, deck)
-  dealer_play = true
   active_players(players).each do |player|
     clear_and_title("#{player.name}'s turn to play.")
 
     puts "Dealer:\t\t\t#{dealer.hand.display_hidden}"
-    dealer_play = (player_turn(player, deck) and dealer_play)
+    player_turn(player, deck)
   end
-  dealer_play
 end
 
 # In one round, allow dealer to take default actions:
@@ -159,14 +152,12 @@ end
 # On one player's turn, allow him to take actions:
 def player_turn(player, deck)
   hands = player.hands
-  dealer_play = true
   # Figure out what the player wants to do with each hand:
   while hands.select{ |hand| !hand.finished? }.any?
     hands.select{ |hand| !hand.finished? }.each_with_index do |hand, i|
-      dealer_play = (hand_actions(player, hand, deck, i) and dealer_play)
+      hand_actions(player, hand, deck, i)
     end
   end
-  dealer_play
 end
 
 # On one player's hand, allow him to take actions:
