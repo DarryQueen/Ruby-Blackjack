@@ -4,11 +4,11 @@ class Player
   @@player_count = 0
 
   def initialize(starting_funds)
-    @name = "Player#{@@player_count}"
+    @@player_count += 1
+
+    @name = "Player #{@@player_count}"
     @funds = starting_funds
     @playing = true
-
-    @@player_count += 1
   end
 
   def name

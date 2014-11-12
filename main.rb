@@ -5,7 +5,7 @@ require 'classes/deck.rb'
 # Static variables:
 STARTING_FUNDS = 1000
 MIN_BET = 5
-MAX_PLAYERS = 10
+MAX_PLAYERS = 9
 
 # Clear the screen:
 def clear_screen
@@ -69,7 +69,7 @@ def main
   end
 
   clear_screen
-  abort('Nobody else wants to play!')
+  abort('Everybody has cashed out. Looks like casino\'s done for tonight!')
 end
 
 # Return a list of all players who are still in the game:
@@ -80,21 +80,21 @@ end
 # In one round, get bets from all players:
 def make_bets(players, deck)
   active_players(players).each do |player|
-    clear_and_title("#{player.name}'s turn.")
+    clear_and_title("#{player.name}'s turn to bet.")
 
     player.new_game
 
-    # Automatically boot player if bankrupt.
+    # Automatically boot player if not enough funds.
     if !player.can_bet(MIN_BET)
       player.fold
-      puts "Looks like you've been gambling too hard. We're going to mandate that you take the night off.\nSee you next time!"
+      puts "You've been gambling too hard. You don't even have enough to play another round. We're going to mandate that you take the night off.\nSee you next time!"
     else
       bet = get_bet(player)
     end
 
     # If player hasn't folded, output his bet and deal his cards.
     if player.playing?
-      puts "\nBetting #{bet}."
+      puts "\nBetting base #{bet}."
       player.deal(deck.draw, deck.draw, bet)
     end
 
@@ -105,9 +105,9 @@ end
 # In one round, allow all players to take actions:
 def take_actions(players, dealer, deck)
   active_players(players).each do |player|
-    clear_and_title("#{player.name}'s turn.")
+    clear_and_title("#{player.name}'s turn to play.")
 
-    puts "Dealer's hand: #{dealer.hand.display_hidden}"
+    puts "Dealer:\t\t\t#{dealer.hand.display_hidden}"
     player_turn(player, deck)
   end
 end
@@ -130,7 +130,7 @@ end
 
 # Display the scoreboard:
 def display_scores(players, dealer, player_gains)
-  clear_and_title('End of round! Here are the totals:')
+  clear_and_title('End of this round! Here\'s the summary.')
   puts "Dealer:\t\t#{dealer.hand.to_s}"
   active_players(players).each do |player|
     hand_strings = player.hands.map{ |hand| "#{hand.to_s}" }.join("\n\t\t")
@@ -138,8 +138,14 @@ def display_scores(players, dealer, player_gains)
   end
   puts ''
   active_players(players).each do |player|
-    puts "#{player.name} #{player_gains[player] < 0 ? 'lost' : 'won'} #{player_gains[player].abs}.\tTotal funds: #{player.funds}."
+    puts "#{player.name} #{player_gains[player] < 0 ? 'lost' : 'gained'} #{player_gains[player].abs}.\tTotal funds: #{player.funds}."
   end
+
+  delta = player_gains.values.inject(:+)
+  if delta < 0
+    puts "\nSeems that the casino cashed out this round!"
+  end
+
   pause
 end
 
@@ -167,7 +173,7 @@ def hand_actions(player, hand, deck, i)
   # If not bust or stand, player can keep going:
   continue = true
   while continue
-    puts "#{player.name}'s hand ##{i + 1}: #{hand.to_s}\n\n"
+    puts "#{player.name}'s hand ##{i + 1}:\t#{hand.to_s}\n\n"
 
     action = get_hand_action(hand)
     proceed = apply_action(action, hand, player.hands, deck)
@@ -177,7 +183,7 @@ def hand_actions(player, hand, deck, i)
   if !hand.alive?
     puts "\nBusted!"
   end
-  puts "\nFinal hand: #{hand.to_s}"
+  puts "\nFinal hand:\t\t#{hand.to_s}"
 
   pause
 end
@@ -208,7 +214,7 @@ def get_num_players
   num_players = 0
   valid = false
   until valid
-    puts 'Number of players?'
+    puts 'How many of you want to play?'
     STDOUT.flush
     num_players = gets.chomp.to_i
     valid = valid_num_players(num_players, MAX_PLAYERS)
@@ -218,15 +224,17 @@ end
 
 # Ask the player for his bet:
 def get_bet(player)
+  puts "You have #{player.funds}.\n"
+
   bet = MIN_BET
   valid = false
   until valid
-    puts "What do you want to bet? You have #{player.funds}. 0 to exit."
+    puts 'What do you want to bet? Bet 0 to quit.'
     STDOUT.flush
     bet = gets.chomp
     # Quitting action:
     if bet == '0'
-      puts 'Bye! Come back later!'
+      puts 'Bye!'
       player.fold
       return
     end
