@@ -1,10 +1,15 @@
 class Hand
-  def initialize(card_visible, card_hidden, bet)
+  def initialize(card_visible, card_hidden, bet, player)
+    @owner = player
     @bet = bet
     @cards = [card_visible, card_hidden]
 
     @finished = false
     @busted = false
+  end
+
+  def bet
+    @bet
   end
 
   def any?
@@ -15,6 +20,7 @@ class Hand
     @finished
   end
 
+  # Display methods:
   def display_hidden
     display = self.class.card_display(@cards.first)
     (1..@cards.count-1).each { display += ' *' }
@@ -27,6 +33,10 @@ class Hand
       display += self.class.card_display(card) + ' '
     end
     return display.strip
+  end
+
+  def display_or_busted
+    alive? ? total : 'Busted'
   end
 
   def valid_actions
@@ -49,6 +59,7 @@ class Hand
     true
   end
 
+  # Playing:
   def hit(card)
     @cards.push(card)
   end
@@ -64,12 +75,13 @@ class Hand
   end
 
   def split(card1, card2)
-    [Hand.new(@cards.first, card1, @bet), Hand.new(@cards.last, card2, @bet)]
+    [Hand.new(@cards.first, card1, @bet, @owner), Hand.new(@cards.last, card2, @bet, @owner)]
   end
 
   # Find the maximum total that attempts to stay under 21.
   def total
-    sum = @cards.inject{ |sum, x| sum + self.class.card_value(x) }
+    sum = 0
+    @cards.each { |card| sum += self.class.card_value(card) }
     aces = @cards.count(1)
 
     # Convert as many 1-value aces to 11-value aces as possible:
@@ -98,6 +110,6 @@ class Hand
   end
 
   def self.card_value(card)
-    return [card, 10].min
+    [card, 10].min
   end
 end

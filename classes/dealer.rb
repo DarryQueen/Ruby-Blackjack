@@ -13,7 +13,7 @@ class Dealer < Player
 
   # Playing:
   def deal(card_visible, card_hidden)
-    @game_stats['hand'] = Hand.new(card_visible, card_hidden, 0)
+    @game_stats['hand'] = Hand.new(card_visible, card_hidden, 0, self)
   end
 
   def hand

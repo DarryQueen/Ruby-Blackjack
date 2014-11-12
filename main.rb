@@ -126,12 +126,22 @@ def main
       dealer.hand.hit(deck.draw)
     end
 
-    # Display scores:
-    puts 'End of round! Here are the totals:'
-    puts "Dealer:\t\t#{dealer.hand.display_all}"
+    # Calculate transactions:
+    player_gains = {}
     players.each do |player|
-      hand = player.hands.map { |hand| hand.display_all }.join("\n\t\t")
-      puts "#{player.name}:\t#{hand}"
+      player_gains[player] = player.compare_hands(dealer.hand)
+    end
+
+    # Display scores:
+    clear_and_title('End of round! Here are the totals:')
+    puts "Dealer:\t\t#{dealer.hand.display_all} (#{dealer.hand.display_or_busted})"
+    players.each do |player|
+      hand_strings = player.hands.map { |hand| "#{hand.display_all} (#{hand.display_or_busted})" }.join("\n\t\t")
+      puts "#{player.name}:\t#{hand_strings}"
+    end
+    puts ''
+    players.each do |player|
+      puts "#{player.name} gained #{player_gains[player]}.\tTotal funds: #{player.funds}."
     end
     pause
   end
