@@ -41,7 +41,7 @@ class Hand
 
   def valid_actions
     actions = ['h', 'st']
-    if @cards.count == 2
+    if @cards.count == 2 and @owner.can_bet(@bet)
       actions.push('dd')
       if self.class.card_value(@cards.first) == self.class.card_value(@cards.last)
         actions.push('sp')

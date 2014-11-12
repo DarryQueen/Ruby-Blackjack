@@ -6,11 +6,17 @@ class Player
   def initialize(starting_funds)
     @name = "Player#{@@player_count}"
     @funds = starting_funds
+    @playing = true
+
     @@player_count += 1
   end
 
   def name
     @name
+  end
+
+  def playing?
+    @playing
   end
 
   def funds
@@ -26,12 +32,22 @@ class Player
 
   # Playing:
   def deal(card_visible, card_hidden, bet)
-    @game_stats['hands'].push(Hand.new(card_visible, card_hidden, bet, self))
-    @game_stats['bet'] = bet
+    if can_bet(bet)
+      @game_stats['hands'].push(Hand.new(card_visible, card_hidden, bet, self))
+      @game_stats['bet'] = bet
+    end
+  end
+
+  def fold
+    @playing = false
   end
 
   def hands
     @game_stats['hands']
+  end
+
+  def can_bet(bet)
+    bet < @funds
   end
 
   def compare_hands(dealer_hand)
