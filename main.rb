@@ -22,41 +22,43 @@ def pause
   gets
 end
 
-# Main method:
+# Main method. This gets run when the command 'ruby main.rb' is executed.:
 def main
   deck = Deck.new
 
   # Ask for number of players:
   num_players = get_num_players
-  players = []
 
   # Create players and dealer:
+  players = []
   (1..num_players).each { players.push(Player.new(STARTING_FUNDS)) }
   dealer = Dealer.new
 
-  # While there are still players left, let's go through a round.
+  # While there are still players left, let's play a round.
   while active_players(players).any?
     deck.shuffle_if_needed
 
     # Each player gets a turn to bet:
     make_bets(players, deck)
 
+    # A second check for active players after betting.
     if active_players(players).any?
-      # Deal in the dealer:
+      # Deal in the dealer; players already dealt:
       dealer.new_game
       dealer.deal(deck.draw, deck.draw)
 
+      # If the dealer got blackjack, it's game over.
       if dealer.hand.blackjack?
         clear_screen
         puts 'Dealer got blackjack!'
         pause
       else
-        # Each player gets a turn to play:
-        player_actions(players, dealer, deck)
+        # All players get a turn to play:
+        take_actions(players, dealer, deck)
       end
 
       # Dealer's turn:
-      dealer_actions(dealer, deck)
+      dealer_turn(dealer, deck)
 
       # Calculate transactions:
       player_gains = calc_transactions(players, dealer)
@@ -90,6 +92,7 @@ def make_bets(players, deck)
       bet = get_bet(player)
     end
 
+    # If player hasn't folded, output his bet and deal his cards.
     if player.playing?
       puts "\nBetting #{bet}."
       player.deal(deck.draw, deck.draw, bet)
@@ -100,17 +103,17 @@ def make_bets(players, deck)
 end
 
 # In one round, allow all players to take actions:
-def player_actions(players, dealer, deck)
+def take_actions(players, dealer, deck)
   active_players(players).each do |player|
     clear_and_title("#{player.name}'s turn.")
 
     puts "Dealer's hand: #{dealer.hand.display_hidden}"
-    hands_actions(player, deck)
+    player_turn(player, deck)
   end
 end
 
 # In one round, allow dealer to take default actions:
-def dealer_actions(dealer, deck)
+def dealer_turn(dealer, deck)
   while dealer.hand.total < 17
     dealer.hand.hit(deck.draw)
   end
@@ -135,14 +138,15 @@ def display_scores(players, dealer, player_gains)
   end
   puts ''
   active_players(players).each do |player|
-    puts "#{player.name} #{player_gains[player] < 0 ? 'forfeit' : 'gained'} #{player_gains[player].abs}.\tTotal funds: #{player.funds}."
+    puts "#{player.name} #{player_gains[player] < 0 ? 'lost' : 'won'} #{player_gains[player].abs}.\tTotal funds: #{player.funds}."
   end
   pause
 end
 
 # On one player's turn, allow him to take actions:
-def hands_actions(player, deck)
+def player_turn(player, deck)
   hands = player.hands
+  # Figure out what the player wants to do with each hand:
   while hands.select{ |hand| !hand.finished? }.any?
     hands.select{ |hand| !hand.finished? }.each_with_index do |hand, i|
       hand_actions(player, hand, deck, i)
@@ -160,7 +164,7 @@ def hand_actions(player, hand, deck, i)
     return
   end
 
-  # Player's action:
+  # If not bust or stand, player can keep going:
   continue = true
   while continue
     puts "#{player.name}'s hand ##{i + 1}: #{hand.to_s}\n\n"
