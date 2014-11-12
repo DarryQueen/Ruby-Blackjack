@@ -5,6 +5,15 @@ Command-line Blackjack in Ruby!
 
 Supports Ruby 1.8.7 and up.
 
+# Setup
+
+## Install
+* Use Rbenv to install.
+* Refer to [this link](https://github.com/sstephenson/rbenv).
+
+## Dependencies
+* Nothing yet. Stay tuned!
+
 # House Rules
 
 ## Betting
