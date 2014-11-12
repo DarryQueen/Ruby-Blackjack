@@ -82,7 +82,13 @@ def make_bets(players, deck)
 
     player.new_game
 
-    bet = get_bet(player)
+    # Automatically boot player if bankrupt.
+    if !player.can_bet(MIN_BET)
+      player.fold
+      puts "Looks like you've been gambling too hard. We're going to mandate that you take the night off.\nSee you next time!"
+    else
+      bet = get_bet(player)
+    end
 
     if player.playing?
       puts "\nBetting #{bet}."
@@ -99,7 +105,7 @@ def player_actions(players, dealer, deck)
     clear_and_title("#{player.name}'s turn.")
 
     puts "Dealer's hand: #{dealer.hand.display_hidden}"
-    hand_actions(player, deck)
+    hands_actions(player, deck)
   end
 end
 
@@ -135,27 +141,11 @@ def display_scores(players, dealer, player_gains)
 end
 
 # On one player's turn, allow him to take actions:
-def hand_actions(player, deck)
+def hands_actions(player, deck)
   hands = player.hands
   while hands.select{ |hand| !hand.finished? }.any?
     hands.select{ |hand| !hand.finished? }.each_with_index do |hand, i|
-      # Blackjack!
-      if hand.blackjack?
-        puts 'Blackjack!'
-
-        pause
-        return
-      end
-
-      # Player's action:
-      continue = true
-      while continue
-        puts "#{player.name}'s hand ##{i + 1}: #{hand.to_s}\n\n"
-
-        action = get_hand_action(hand)
-        proceed = apply_action(action, hand, hands, deck)
-        continue = (hand.alive? and proceed)
-      end
+      hand_actions(player, hand, deck, i)
 
       if !hand.alive?
         puts "\nBusted!"
@@ -164,6 +154,27 @@ def hand_actions(player, deck)
 
       pause
     end
+  end
+end
+
+# On one player's hand, allow him to take actions:
+def hand_actions(player, hand, deck, i)
+  # Blackjack!
+  if hand.blackjack?
+    puts 'Blackjack!'
+
+    pause
+    return
+  end
+
+  # Player's action:
+  continue = true
+  while continue
+    puts "#{player.name}'s hand ##{i + 1}: #{hand.to_s}\n\n"
+
+    action = get_hand_action(hand)
+    proceed = apply_action(action, hand, player.hands, deck)
+    continue = (hand.alive? and proceed)
   end
 end
 
