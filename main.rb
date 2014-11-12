@@ -66,6 +66,7 @@ def main
       end
 
       if player.playing?
+        puts "\nBetting #{bet}."
         player.deal(deck.draw, deck.draw, bet)
       end
 
@@ -126,7 +127,7 @@ def main
           if !hand.alive?
             puts "\nBusted!"
           end
-          puts "This hand: #{hand.display_all}"
+          puts "\nFinal hand: #{hand.display_all}"
 
           pause
         end
@@ -148,12 +149,12 @@ def main
     clear_and_title('End of round! Here are the totals:')
     puts "Dealer:\t\t#{dealer.hand.display_all} (#{dealer.hand.display_or_busted})"
     players.select{ |player| player.playing? }.each do |player|
-      hand_strings = player.hands.map { |hand| "#{hand.display_all} (#{hand.display_or_busted})" }.join("\n\t\t")
+      hand_strings = player.hands.map{ |hand| "#{hand.display_all} (#{hand.display_or_busted})" }.join("\n\t\t")
       puts "#{player.name}:\t#{hand_strings}"
     end
     puts ''
     players.select{ |player| player.playing? }.each do |player|
-      puts "#{player.name} gained #{player_gains[player]}.\tTotal funds: #{player.funds}."
+      puts "#{player.name} #{player_gains[player] < 0 ? 'lost' : 'gained'} #{player_gains[player].abs}.\tTotal funds: #{player.funds}."
     end
     pause
   end

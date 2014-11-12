@@ -47,7 +47,7 @@ class Player
   end
 
   def can_bet(bet)
-    bet < @funds
+    bet <= @funds - @game_stats['hands'].map{ |hand| hand.bet }.inject(:+).to_i
   end
 
   def compare_hands(dealer_hand)
