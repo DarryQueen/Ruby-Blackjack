@@ -10,6 +10,17 @@ Supports Ruby 1.8.7 and up.
 ## Install
 * Use Rbenv to install.
 * Refer to [this link](https://github.com/sstephenson/rbenv).
+* To run the program, execute `ruby main.rb` from the root directory.
+
+## Actions
+* Each player must either bet `0` to quit or an amount equal to or greater than the ante.
+* In play, a player can choose to hit, stand, double down, or split.
+  * To hit, type `h`.
+  * To stand, type `st`.
+  * To double down, type `dd`.
+  * To split, type `sp`.
+  * Note that any actions that require extra funds in addition to the base bet are only available if the user has enough funds.
+    * For example, if a user has 400 and bets 300, he cannot double down or split.
 
 ## Dependencies
 * Nothing yet. Stay tuned!
