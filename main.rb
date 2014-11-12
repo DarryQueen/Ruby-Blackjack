@@ -26,55 +26,21 @@ def main
   deck = Deck.new
 
   # Ask for number of players:
-  clear_screen
-  num_players = 0
-  valid = false
-  until valid
-    puts 'Number of players?'
-    STDOUT.flush
-    num_players = gets.chomp.to_i
-    valid = valid_num_players(num_players)
-  end
+  num_players = get_num_players
   players = []
+
+  # Create players and dealer:
   (1..num_players).each { players.push(Player.new(STARTING_FUNDS)) }
   dealer = Dealer.new
 
-  while !players.select{ |player| player.playing? }.empty?
+  # While there are still players left, let's go through a round.
+  while active_players(players).any?
     deck.shuffle_if_needed
 
     # Each player gets a turn to bet:
-    players.select{ |player| player.playing? }.each do |player|
-      title = "#{player.name}'s turn."
-      clear_and_title(title)
+    make_bets(players, deck)
 
-      player.new_game
-
-      # Betting:
-      bet = MINIMUM_BET
-      valid = false
-      until valid
-        puts "What do you want to bet? You have #{player.funds}. 0 to exit."
-        STDOUT.flush
-        bet = gets.chomp
-        # Quitting action:
-        if bet == '0'
-          valid = true
-          puts 'Bye! Come back later!'
-          player.fold
-          next
-        end
-        bet = bet.to_i
-        valid = valid_bet(bet, MINIMUM_BET, player)
-      end
-
-      if player.playing?
-        puts "\nBetting #{bet}."
-        player.deal(deck.draw, deck.draw, bet)
-      end
-
-      pause
-    end
-
+    # Deal in the dealer:
     dealer.new_game
     dealer.deal(deck.draw, deck.draw)
 
@@ -84,96 +50,187 @@ def main
       pause
     else
       # Each player gets a turn to play:
-      players.select{ |player| player.playing? }.each do |player|
-        title = "#{player.name}'s turn."
-
-        hands = player.hands
-
-        # Player's turn:
-        clear_and_title(title)
-        puts "Dealer's hand: #{dealer.hand.display_hidden}"
-        while hands.select{ |hand| !hand.finished? }.any?
-          hands.select{ |hand| !hand.finished? }.each_with_index do |hand, i|
-            # Player's action:
-            continue = true
-
-            # Blackjack!
-            if hand.blackjack?
-              puts 'Blackjack!'
-              continue = false
-            end
-
-            while continue
-              puts "#{player.name}'s hand ##{i + 1}: #{hand.display_all}\n\n"
-
-              valid_actions = hand.valid_actions
-              action = ''
-              valid = false
-              until valid
-                puts "What action do you want to take? (#{valid_actions.join('/')})"
-                STDOUT.flush
-                action = gets.chomp
-                valid = valid_action(action, valid_actions)
-              end
-
-              # Hit:
-              if action == 'h'
-                hand.hit(deck.draw)
-              # Stand:
-              elsif action == 'st'
-                continue = false
-                hand.stand
-              # Double down:
-              elsif action == 'dd'
-                continue = false
-                hand.double_down(deck.draw)
-              # Split:
-              elsif action == 'sp'
-                continue = false
-                hands.delete(hand)
-                hands.concat(hand.split(deck.draw, deck.draw))
-              end
-
-              continue = (hand.alive? and continue)
-            end
-
-            if !hand.alive?
-              puts "\nBusted!"
-            end
-            puts "\nFinal hand: #{hand.display_all}"
-
-            pause
-          end
-        end
-      end
+      player_actions(players, dealer, deck)
     end
 
     # Dealer's turn:
-    while dealer.hand.total < 17
-      dealer.hand.hit(deck.draw)
-    end
+    dealer_actions(dealer, deck)
 
     # Calculate transactions:
-    player_gains = {}
-    players.select{ |player| player.playing? }.each do |player|
-      player_gains[player] = player.compare_hands(dealer.hand)
-    end
+    player_gains = calc_transactions(players, dealer)
 
     # Display scores:
-    clear_and_title('End of round! Here are the totals:')
-    puts "Dealer:\t\t#{dealer.hand.display_all} (#{dealer.hand.display_or_busted})"
-    players.select{ |player| player.playing? }.each do |player|
-      hand_strings = player.hands.map{ |hand| "#{hand.display_all} (#{hand.display_or_busted})" }.join("\n\t\t")
-      puts "#{player.name}:\t#{hand_strings}"
-    end
-    puts ''
-    players.select{ |player| player.playing? }.each do |player|
-      puts "#{player.name} #{player_gains[player] < 0 ? 'forfeit' : 'gained'} #{player_gains[player].abs}.\tTotal funds: #{player.funds}."
-    end
-    pause
+    display_scores(players, dealer, player_gains)
   end
 
   abort('Nobody else wants to play!')
+end
+
+# Return a list of all players who are still in the game:
+def active_players(players)
+  players.select{ |player| player.playing? }
+end
+
+# In one round, get bets from all players:
+def make_bets(players, deck)
+  active_players(players).each do |player|
+    clear_and_title("#{player.name}'s turn.")
+
+    player.new_game
+
+    bet = get_bet(player)
+
+    if player.playing?
+      puts "\nBetting #{bet}."
+      player.deal(deck.draw, deck.draw, bet)
+    end
+
+    pause
+  end
+end
+
+# In one round, allow all players to take actions:
+def player_actions(players, dealer, deck)
+  active_players(players).each do |player|
+    clear_and_title("#{player.name}'s turn.")
+
+    hands = player.hands
+    puts "Dealer's hand: #{dealer.hand.display_hidden}"
+    hand_actions(hands, player, deck)
+  end
+end
+
+# In one round, allow dealer to take default actions:
+def dealer_actions(dealer, deck)
+  while dealer.hand.total < 17
+    dealer.hand.hit(deck.draw)
+  end
+end
+
+# Calculate the transactions:
+def calc_transactions(players, dealer)
+  player_gains = {}
+  active_players(players).each do |player|
+    player_gains[player] = player.compare_hands(dealer.hand)
+  end
+  player_gains
+end
+
+# Display the scoreboard:
+def display_scores(players, dealer, player_gains)
+  clear_and_title('End of round! Here are the totals:')
+  puts "Dealer:\t\t#{dealer.hand.display_all} (#{dealer.hand.display_or_busted})"
+  active_players(players).each do |player|
+    hand_strings = player.hands.map{ |hand| "#{hand.display_all} (#{hand.display_or_busted})" }.join("\n\t\t")
+    puts "#{player.name}:\t#{hand_strings}"
+  end
+  puts ''
+  active_players(players).each do |player|
+    puts "#{player.name} #{player_gains[player] < 0 ? 'forfeit' : 'gained'} #{player_gains[player].abs}.\tTotal funds: #{player.funds}."
+  end
+  pause
+end
+
+# On one player's turn, allow him to take actions:
+def hand_actions(hands, player, deck)
+  while hands.select{ |hand| !hand.finished? }.any?
+    hands.select{ |hand| !hand.finished? }.each_with_index do |hand, i|
+      # Blackjack!
+      if hand.blackjack?
+        puts 'Blackjack!'
+        pause
+        return
+      end
+
+      # Player's action:
+      continue = true
+      while continue
+        puts "#{player.name}'s hand ##{i + 1}: #{hand.display_all}\n\n"
+
+        action = get_hand_action(hand)
+
+        finished = apply_action(action, hand, hands, deck)
+
+        continue = (hand.alive? and finished)
+      end
+
+      if !hand.alive?
+        puts "\nBusted!"
+      end
+      puts "\nFinal hand: #{hand.display_all}"
+
+      pause
+    end
+  end
+end
+
+# Perform the given action:
+def apply_action(action, hand, hands, deck)
+  # Hit:
+  if action == 'h'
+    hand.hit(deck.draw)
+    return true
+  # Stand:
+  elsif action == 'st'
+    hand.stand
+  # Double down:
+  elsif action == 'dd'
+    hand.double_down(deck.draw)
+  # Split:
+  elsif action == 'sp'
+    hands.delete(hand)
+    hands.concat(hand.split(deck.draw, deck.draw))
+  end
+  false
+end
+
+# Ask the user for the number of players:
+def get_num_players
+  clear_screen
+  num_players = 0
+  valid = false
+  until valid
+    puts 'Number of players?'
+    STDOUT.flush
+    num_players = gets.chomp.to_i
+    valid = valid_num_players(num_players)
+  end
+  num_players
+end
+
+# Ask the player for his bet:
+def get_bet(player)
+  bet = MINIMUM_BET
+  valid = false
+  until valid
+    puts "What do you want to bet? You have #{player.funds}. 0 to exit."
+    STDOUT.flush
+    bet = gets.chomp
+    # Quitting action:
+    if bet == '0'
+      puts 'Bye! Come back later!'
+      player.fold
+      return
+    end
+
+    # Validation:
+    bet = bet.to_i
+    valid = valid_bet(bet, MINIMUM_BET, player)
+  end
+  bet
+end
+
+def get_hand_action(hand)
+  valid_actions = hand.valid_actions
+  action = ''
+  valid = false
+  until valid
+    puts "What action do you want to take? (#{valid_actions.join('/')})"
+    STDOUT.flush
+    action = gets.chomp
+    valid = valid_action(action, valid_actions)
+  end
+  action
 end
 
 # Check if input is a valid number of players:
