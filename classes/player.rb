@@ -23,6 +23,7 @@ class Player
     @funds
   end
 
+  # Reset game stats. 'bet' attribute may not be needed.
   def new_game
     @game_stats = {
       'hands' => [],

@@ -12,10 +12,6 @@ class Hand
     @bet
   end
 
-  def any?
-    return @cards.any?
-  end
-
   def finished?
     @finished
   end
@@ -43,6 +39,13 @@ class Hand
     "#{display_all} (#{display_or_busted})"
   end
 
+  # Playing:
+  def blackjack?
+    blackjack = (@cards.count == 2 and total == 21)
+    @finished = blackjack ? true : @finished
+    blackjack
+  end
+
   def valid_actions
     actions = ['h', 'st']
     if @cards.count == 2 and @owner.can_bet(@bet)
@@ -52,22 +55,6 @@ class Hand
       end
     end
     actions
-  end
-
-  def alive?
-    if total > 21
-      @finished = true
-      @bust = true
-      return false
-    end
-    true
-  end
-
-  # Playing:
-  def blackjack?
-    blackjack = (@cards.count == 2 and total == 21)
-    @finished = blackjack ? true : @finished
-    blackjack
   end
 
   def hit(card)
@@ -90,6 +77,15 @@ class Hand
     hands.push(Hand.new(@cards.first, card1, @bet, @owner), Hand.new(@cards.last, card2, @bet, @owner))
   end
 
+  def alive?
+    if total > 21
+      @finished = true
+      @bust = true
+      return false
+    end
+    true
+  end
+
   # Find the maximum total that attempts to stay under 21.
   def total
     sum = 0
@@ -108,6 +104,7 @@ class Hand
   # Private static methods:
   private
 
+  # Get the string display of the card.
   def self.card_display(card)
     if card == 1
       return 'A'
@@ -121,6 +118,7 @@ class Hand
     card.to_s
   end
 
+  # Get the numerical value of the card.
   def self.card_value(card)
     [card, 10].min
   end
