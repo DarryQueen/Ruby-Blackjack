@@ -36,7 +36,7 @@ class Hand
   end
 
   def display_or_busted
-    alive? ? total : 'Busted'
+    alive? ? (blackjack? ? 'Blackjack!' : total) : 'Busted'
   end
 
   def valid_actions
@@ -60,6 +60,12 @@ class Hand
   end
 
   # Playing:
+  def blackjack?
+    blackjack = (@cards.count == 2 and total == 21)
+    @finished = blackjack ? true : @finished
+    blackjack
+  end
+
   def hit(card)
     @cards.push(card)
   end
@@ -106,7 +112,7 @@ class Hand
     elsif card == 13
       return 'K'
     end
-    return card.to_s
+    card.to_s
   end
 
   def self.card_value(card)

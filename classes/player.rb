@@ -53,8 +53,11 @@ class Player
   def compare_hands(dealer_hand)
     delta = 0
     dealer_bust = !dealer_hand.alive?
+    dealer_blackjack = dealer_hand.blackjack?
     @game_stats['hands'].each do |hand|
-      if hand.alive? and (dealer_bust or hand.total > dealer_hand.total)
+      if dealer_blackjack
+        delta -= hand.blackjack? ? 0 : hand.bet
+      elsif hand.alive? and (dealer_bust or hand.total > dealer_hand.total)
         delta += hand.bet
       else
         delta -= hand.bet
