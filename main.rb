@@ -180,6 +180,11 @@ def hand_actions(player, hand, deck, i)
     continue = (hand.alive? and proceed)
   end
 
+  # If the action is a split, we have to redo everything:
+  if action == 'sp'
+    return
+  end
+
   if !hand.alive?
     puts "\nBusted!"
   end
