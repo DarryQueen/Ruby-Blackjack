@@ -217,8 +217,7 @@ def apply_action(action, hand, hands, deck)
     hand.double_down(deck.draw)
   # Split:
   elsif action == 'sp'
-    hands.delete(hand)
-    hands.concat(hand.split(deck.draw, deck.draw))
+    hand.split(deck.draw, deck.draw)
   end
   false
 end

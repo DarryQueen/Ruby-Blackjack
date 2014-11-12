@@ -85,7 +85,9 @@ class Hand
   end
 
   def split(card1, card2)
-    [Hand.new(@cards.first, card1, @bet, @owner), Hand.new(@cards.last, card2, @bet, @owner)]
+    hands = @owner.hands
+    hands.delete(self)
+    hands.push(Hand.new(@cards.first, card1, @bet, @owner), Hand.new(@cards.last, card2, @bet, @owner))
   end
 
   # Find the maximum total that attempts to stay under 21.
