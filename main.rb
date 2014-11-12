@@ -4,7 +4,8 @@ require 'classes/deck.rb'
 
 # Static variables:
 STARTING_FUNDS = 1000
-MINIMUM_BET = 5
+MIN_BET = 5
+MAX_PLAYERS = 10
 
 # Clear the screen:
 def clear_screen
@@ -40,29 +41,32 @@ def main
     # Each player gets a turn to bet:
     make_bets(players, deck)
 
-    # Deal in the dealer:
-    dealer.new_game
-    dealer.deal(deck.draw, deck.draw)
+    if active_players(players).any?
+      # Deal in the dealer:
+      dealer.new_game
+      dealer.deal(deck.draw, deck.draw)
 
-    if dealer.hand.blackjack?
-      clear_screen
-      puts 'Dealer got blackjack!'
-      pause
-    else
-      # Each player gets a turn to play:
-      player_actions(players, dealer, deck)
+      if dealer.hand.blackjack?
+        clear_screen
+        puts 'Dealer got blackjack!'
+        pause
+      else
+        # Each player gets a turn to play:
+        player_actions(players, dealer, deck)
+      end
+
+      # Dealer's turn:
+      dealer_actions(dealer, deck)
+
+      # Calculate transactions:
+      player_gains = calc_transactions(players, dealer)
+
+      # Display scores:
+      display_scores(players, dealer, player_gains)
     end
-
-    # Dealer's turn:
-    dealer_actions(dealer, deck)
-
-    # Calculate transactions:
-    player_gains = calc_transactions(players, dealer)
-
-    # Display scores:
-    display_scores(players, dealer, player_gains)
   end
 
+  clear_screen
   abort('Nobody else wants to play!')
 end
 
@@ -94,9 +98,8 @@ def player_actions(players, dealer, deck)
   active_players(players).each do |player|
     clear_and_title("#{player.name}'s turn.")
 
-    hands = player.hands
     puts "Dealer's hand: #{dealer.hand.display_hidden}"
-    hand_actions(hands, player, deck)
+    hand_actions(player, deck)
   end
 end
 
@@ -119,9 +122,9 @@ end
 # Display the scoreboard:
 def display_scores(players, dealer, player_gains)
   clear_and_title('End of round! Here are the totals:')
-  puts "Dealer:\t\t#{dealer.hand.display_all} (#{dealer.hand.display_or_busted})"
+  puts "Dealer:\t\t#{dealer.hand.to_s}"
   active_players(players).each do |player|
-    hand_strings = player.hands.map{ |hand| "#{hand.display_all} (#{hand.display_or_busted})" }.join("\n\t\t")
+    hand_strings = player.hands.map{ |hand| "#{hand.to_s}" }.join("\n\t\t")
     puts "#{player.name}:\t#{hand_strings}"
   end
   puts ''
@@ -132,12 +135,14 @@ def display_scores(players, dealer, player_gains)
 end
 
 # On one player's turn, allow him to take actions:
-def hand_actions(hands, player, deck)
+def hand_actions(player, deck)
+  hands = player.hands
   while hands.select{ |hand| !hand.finished? }.any?
     hands.select{ |hand| !hand.finished? }.each_with_index do |hand, i|
       # Blackjack!
       if hand.blackjack?
         puts 'Blackjack!'
+
         pause
         return
       end
@@ -145,19 +150,17 @@ def hand_actions(hands, player, deck)
       # Player's action:
       continue = true
       while continue
-        puts "#{player.name}'s hand ##{i + 1}: #{hand.display_all}\n\n"
+        puts "#{player.name}'s hand ##{i + 1}: #{hand.to_s}\n\n"
 
         action = get_hand_action(hand)
-
-        finished = apply_action(action, hand, hands, deck)
-
-        continue = (hand.alive? and finished)
+        proceed = apply_action(action, hand, hands, deck)
+        continue = (hand.alive? and proceed)
       end
 
       if !hand.alive?
         puts "\nBusted!"
       end
-      puts "\nFinal hand: #{hand.display_all}"
+      puts "\nFinal hand: #{hand.to_s}"
 
       pause
     end
@@ -193,14 +196,14 @@ def get_num_players
     puts 'Number of players?'
     STDOUT.flush
     num_players = gets.chomp.to_i
-    valid = valid_num_players(num_players)
+    valid = valid_num_players(num_players, MAX_PLAYERS)
   end
   num_players
 end
 
 # Ask the player for his bet:
 def get_bet(player)
-  bet = MINIMUM_BET
+  bet = MIN_BET
   valid = false
   until valid
     puts "What do you want to bet? You have #{player.funds}. 0 to exit."
@@ -215,7 +218,7 @@ def get_bet(player)
 
     # Validation:
     bet = bet.to_i
-    valid = valid_bet(bet, MINIMUM_BET, player)
+    valid = valid_bet(bet, MIN_BET, player)
   end
   bet
 end
@@ -234,24 +237,24 @@ def get_hand_action(hand)
 end
 
 # Check if input is a valid number of players:
-def valid_num_players(num)
+def valid_num_players(num, max_players)
   if num == 0
     puts 'Invalid number.'
     return false
-  elsif num > 10
-    puts 'Too many players.'
+  elsif num > max_players
+    puts "Cannot have more than the max number of players (#{max_players})."
     return false
   end
   true
 end
 
 # Check if bet is valid:
-def valid_bet(num, minimum_bet, player)
+def valid_bet(num, min_bet, player)
   if num == 0
     puts 'Invalid number.'
     return false
-  elsif num < minimum_bet
-    puts "Bet must be higher than minimum (#{minimum_bet})."
+  elsif num < min_bet
+    puts "Bet must be higher than minimum (#{min_bet})."
     return false
   elsif !player.can_bet(num)
     puts "Nice try, betting money you don't have."

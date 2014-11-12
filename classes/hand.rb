@@ -39,6 +39,10 @@ class Hand
     alive? ? (blackjack? ? 'Blackjack!' : total) : 'Busted'
   end
 
+  def to_s
+    "#{display_all} (#{display_or_busted})"
+  end
+
   def valid_actions
     actions = ['h', 'st']
     if @cards.count == 2 and @owner.can_bet(@bet)
