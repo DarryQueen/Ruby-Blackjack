@@ -1,33 +1,23 @@
 class Deck
-  @@SHUFFLE_AT = 50
+  @@SHUFFLE_AT = 26
 
   def initialize
-    @cards = Array.new(13, 4)
+    reset
   end
 
-  # Randomly select from the current deck.
   def draw
-    card_count = @cards.inject(:+)
-
-    card_position = rand(card_count)
-    card = 0
-    while card_position >= 0
-      card_position -= @cards[card]
-      card += 1
-    end
-    @cards[card - 1] -= 1
-    card
+    @cards.pop
   end
 
   # Determine if we need to reset the deck.
   def shuffle_if_needed
-    card_count = @cards.inject(:+)
-    if card_count <= @@SHUFFLE_AT
+    if @cards.count <= @@SHUFFLE_AT
       reset
     end
   end
 
   def reset
-    @cards = Array.new(13, 4)
+    # Create 4 by 13 cards and randomly sort.
+    @cards = ([*1..13] * 4).sort_by{ rand }
   end
 end
