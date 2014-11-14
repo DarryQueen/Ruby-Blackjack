@@ -114,6 +114,7 @@ def player_turn(player, dealer, deck)
     if player.blackjack?
       puts "\nBlackjack!"
       player.update_turn
+      pause
       next
     end
 
